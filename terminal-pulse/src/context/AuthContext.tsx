@@ -1,7 +1,7 @@
-// Terminal Pulse - Step 6: Authentication Context
+// Terminal Pulse - Fixed Authentication Context
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { User, AuthContextType } from '../types';
+import { User, AuthContextType, Terminal, SupportTicket } from '../types';
 import { localStorageService } from '../services/localStorage';
 
 // Auth State
@@ -53,9 +53,6 @@ const initialState: AuthState = {
   error: null
 };
 
-// Create Context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 // Permission mappings by role
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   'Administrator': [
@@ -92,6 +89,23 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ]
 };
 
+// Create Context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Enhanced AuthContextType implementation
+interface ExtendedAuthContextType extends AuthContextType {
+  loading: boolean;
+  error: string | null;
+  updateCurrentUser: (updates: Partial<User>) => void;
+  clearError: () => void;
+  isAdmin: () => boolean;
+  isManager: () => boolean;
+  isSupport: () => boolean;
+  isMerchant: () => boolean;
+  getAccessibleTerminals: () => Terminal[];
+  getAccessibleTickets: () => SupportTicket[];
+}
+
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
@@ -123,7 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return false;
       }
 
-      // Verify password (in real app, this would be hashed comparison)
+      // Verify password
       if (user.password !== password) {
         // Increment failed attempts
         const updatedUser = localStorageService.updateUser(user.id, {
@@ -197,7 +211,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isMerchant = (): boolean => state.currentUser?.role === 'Merchant';
 
   // Helper to get accessible terminals for current user
-  const getAccessibleTerminals = () => {
+  const getAccessibleTerminals = (): Terminal[] => {
     if (!state.currentUser) return [];
     
     if (state.currentUser.role === 'Merchant') {
@@ -208,12 +222,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Helper to get accessible tickets for current user
-  const getAccessibleTickets = () => {
+  const getAccessibleTickets = (): SupportTicket[] => {
     if (!state.currentUser) return [];
     return localStorageService.getTicketsByUser(state.currentUser.id);
   };
 
-  const value: AuthContextType = {
+  const value: ExtendedAuthContextType = {
     currentUser: state.currentUser,
     loading: state.loading,
     error: state.error,
@@ -239,12 +253,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 // Custom hook to use auth context
-export const useAuth = (): AuthContextType => {
+export const useAuth = (): ExtendedAuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  return context as ExtendedAuthContextType;
 };
 
 // Higher-order component for protected routes
@@ -265,17 +279,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Not authenticated
   if (!currentUser) {
-    return fallback || <div>Please log in to access this page.</div>;
+    return <>{fallback || <div>Please log in to access this page.</div>}</>;
   }
 
   // Check role requirement
   if (requiredRole && currentUser.role !== requiredRole) {
-    return fallback || <div>Access denied. Insufficient permissions.</div>;
+    return <>{fallback || <div>Access denied. Insufficient permissions.</div>}</>;
   }
 
   // Check permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
-    return fallback || <div>Access denied. Insufficient permissions.</div>;
+    return <>{fallback || <div>Access denied. Insufficient permissions.</div>}</>;
   }
 
   return <>{children}</>;

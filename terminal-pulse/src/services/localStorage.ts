@@ -1,4 +1,4 @@
-// Terminal Pulse - Step 5: LocalStorage Service for Data Persistence
+// Terminal Pulse - Fixed LocalStorage Service
 
 import { 
   User, 
@@ -258,7 +258,7 @@ class LocalStorageService {
         fullName: 'Tendai Mukamuri',
         username: 'admin.mukamuri',
         email: 'admin.mukamuri@stanbic.co.zw',
-        password: 'admin123', // In real app, this would be hashed
+        password: 'admin123',
         role: 'Administrator' as UserRole,
         status: 'Active',
         failedLoginAttempts: 0,
@@ -321,6 +321,8 @@ class LocalStorageService {
         uptime: 100,
         transactionsToday: 45,
         lastTransaction: new Date(),
+        lastMaintenance: null,
+        nextMaintenance: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date()
       },
@@ -329,11 +331,13 @@ class LocalStorageService {
         location: 'Bulawayo City',
         merchant: 'Ushe Manhuna',
         status: 'Online' as TerminalStatus,
-        lastSeen: new Date(Date.now() - 9 * 60000), // 9 minutes ago
+        lastSeen: new Date(Date.now() - 9 * 60000),
         coordinates: { lat: -20.1594, lng: 28.5906 },
         uptime: 98.5,
         transactionsToday: 32,
         lastTransaction: new Date(Date.now() - 30 * 60000),
+        lastMaintenance: null,
+        nextMaintenance: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date()
       },
@@ -342,11 +346,13 @@ class LocalStorageService {
         location: 'Mutare Center',
         merchant: 'Ushe Manhuna',
         status: 'Offline' as TerminalStatus,
-        lastSeen: new Date(Date.now() - 2 * 60 * 60000), // 2 hours ago
+        lastSeen: new Date(Date.now() - 2 * 60 * 60000),
         coordinates: { lat: -18.9707, lng: 32.6473 },
         uptime: 85.2,
         transactionsToday: 0,
         lastTransaction: new Date(Date.now() - 3 * 60 * 60000),
+        lastMaintenance: null,
+        nextMaintenance: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date()
       },
@@ -355,11 +361,13 @@ class LocalStorageService {
         location: 'Gweru Main',
         merchant: 'Choppies',
         status: 'Maintenance' as TerminalStatus,
-        lastSeen: new Date(Date.now() - 34 * 60000), // 34 minutes ago
+        lastSeen: new Date(Date.now() - 34 * 60000),
         coordinates: { lat: -19.4543, lng: 29.8154 },
         uptime: 92.1,
         transactionsToday: 15,
         lastTransaction: new Date(Date.now() - 60 * 60000),
+        lastMaintenance: null,
+        nextMaintenance: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date()
       },
@@ -368,11 +376,13 @@ class LocalStorageService {
         location: 'Masvingo Plaza',
         merchant: 'Food World',
         status: 'Online' as TerminalStatus,
-        lastSeen: new Date(Date.now() - 5 * 60000), // 5 minutes ago
+        lastSeen: new Date(Date.now() - 5 * 60000),
         coordinates: { lat: -20.0716, lng: 30.8272 },
         uptime: 96.8,
         transactionsToday: 28,
         lastTransaction: new Date(Date.now() - 15 * 60000),
+        lastMaintenance: null,
+        nextMaintenance: null,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date()
       }
@@ -391,29 +401,12 @@ class LocalStorageService {
         source: 'System',
         reportedBy: 'user-admin-001',
         assignedTo: 'user-support-001',
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60000), // 10 days ago
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60000),
         updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60000),
         resolvedAt: null,
         slaTarget: new Date(Date.now() - 10 * 24 * 60 * 60000 + 4 * 60 * 60000),
         slaBreach: true,
-        slaBreachDuration: 259 * 60 // 259 hours in minutes
-      },
-      {
-        id: 'TKT-2025-002',
-        title: 'Payment Processing Error - OK Zimbabwe Belvedere',
-        description: 'Multiple transaction failures reported',
-        terminalId: 'T002',
-        priority: 'High',
-        status: 'In Progress' as TicketStatus,
-        source: 'Merchant',
-        reportedBy: 'user-merchant-001',
-        assignedTo: 'user-support-001',
-        createdAt: new Date(Date.now() - 11 * 24 * 60 * 60000), // 11 days ago
-        updatedAt: new Date(Date.now() - 11 * 24 * 60 * 60000),
-        resolvedAt: null,
-        slaTarget: new Date(Date.now() - 11 * 24 * 60 * 60000 + 4 * 60 * 60000),
-        slaBreach: true,
-        slaBreachDuration: 262 * 60 // 262 hours in minutes
+        slaBreachDuration: 259 * 60
       }
     ];
   }
@@ -427,7 +420,7 @@ class LocalStorageService {
         severity: 'High',
         terminalId: 'T003',
         acknowledged: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60000) // 2 hours ago
+        createdAt: new Date(Date.now() - 2 * 60 * 60000)
       }
     ];
   }
@@ -441,17 +434,17 @@ class LocalStorageService {
       metrics.push({
         date: date.toISOString().split('T')[0],
         totalTerminals: 20,
-        onlineTerminals: Math.floor(Math.random() * 8 + 12), // 12-20
-        offlineTerminals: Math.floor(Math.random() * 4 + 0), // 0-4
-        maintenanceTerminals: Math.floor(Math.random() * 3 + 0), // 0-3
-        errorTerminals: Math.floor(Math.random() * 3 + 0), // 0-3
-        averageUptime: Math.random() * 20 + 80, // 80-100%
-        totalTickets: Math.floor(Math.random() * 15 + 5), // 5-20
-        openTickets: Math.floor(Math.random() * 8 + 2), // 2-10
-        resolvedTickets: Math.floor(Math.random() * 10 + 3), // 3-13
-        averageResolutionTime: Math.random() * 240 + 60, // 60-300 minutes
-        slaCompliance: Math.random() * 15 + 85, // 85-100%
-        customerSatisfaction: Math.random() * 1 + 4 // 4-5
+        onlineTerminals: Math.floor(Math.random() * 8 + 12),
+        offlineTerminals: Math.floor(Math.random() * 4 + 0),
+        maintenanceTerminals: Math.floor(Math.random() * 3 + 0),
+        errorTerminals: Math.floor(Math.random() * 3 + 0),
+        averageUptime: Math.random() * 20 + 80,
+        totalTickets: Math.floor(Math.random() * 15 + 5),
+        openTickets: Math.floor(Math.random() * 8 + 2),
+        resolvedTickets: Math.floor(Math.random() * 10 + 3),
+        averageResolutionTime: Math.random() * 240 + 60,
+        slaCompliance: Math.random() * 15 + 85,
+        customerSatisfaction: Math.random() * 1 + 4
       });
     }
     
@@ -459,4 +452,4 @@ class LocalStorageService {
   }
 }
 
-export const localStorageServi
+export const localStorageService = LocalStorageService.getInstance();
