@@ -1,30 +1,27 @@
-// Terminal Pulse - Step 3: TypeScript Data Models
+// Terminal Pulse - Updated Types with Enhanced AuthContextType
 
 export type UserRole = 'Administrator' | 'Support Agent' | 'Service Desk Manager' | 'Merchant';
-
 export type TerminalStatus = 'Online' | 'Offline' | 'Maintenance' | 'Error';
-
 export type TicketStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed' | 'Scheduled';
-
 export type TicketPriority = 'Low' | 'Medium' | 'High' | 'Critical';
-
 export type TicketSource = 'System' | 'Merchant' | 'Customer Call' | 'WhatsApp' | 'Email';
+
+// ... (all previous interfaces remain the same) ...
 
 export interface User {
   id: string;
   fullName: string;
   username: string;
   email: string;
-  password: string; // In real app, this would be hashed
+  password: string;
   role: UserRole;
   status: 'Active' | 'Locked';
   failedLoginAttempts: number;
   lastLogin: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  // Role-specific fields
-  assignedTerminals?: string[]; // For merchants
-  permissions?: string[]; // For granular access control
+  assignedTerminals?: string[];
+  permissions?: string[];
 }
 
 export interface Terminal {
@@ -33,20 +30,14 @@ export interface Terminal {
   merchant: string;
   status: TerminalStatus;
   lastSeen: Date;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  // Technical details
+  coordinates: { lat: number; lng: number };
   model?: string;
   serialNumber?: string;
   firmwareVersion?: string;
   networkType?: 'WiFi' | 'Ethernet' | '4G' | '3G';
-  // Performance metrics
-  uptime: number; // percentage
+  uptime: number;
   transactionsToday: number;
   lastTransaction: Date | null;
-  // Maintenance
   lastMaintenance: Date | null;
   nextMaintenance: Date | null;
   createdAt: Date;
@@ -61,22 +52,17 @@ export interface SupportTicket {
   priority: TicketPriority;
   status: TicketStatus;
   source: TicketSource;
-  // User relationships
-  reportedBy: string; // User ID
-  assignedTo: string | null; // User ID
-  // Timestamps
+  reportedBy: string;
+  assignedTo: string | null;
   createdAt: Date;
   updatedAt: Date;
   resolvedAt: Date | null;
-  // SLA tracking
   slaTarget: Date;
   slaBreach: boolean;
-  slaBreachDuration: number; // minutes over SLA
-  // Resolution details
+  slaBreachDuration: number;
   resolution?: string;
-  resolutionTime?: number; // minutes to resolve
-  // Customer satisfaction
-  satisfactionRating?: number; // 1-5
+  resolutionTime?: number;
+  satisfactionRating?: number;
   feedback?: string;
 }
 
@@ -85,7 +71,7 @@ export interface TicketComment {
   ticketId: string;
   userId: string;
   comment: string;
-  isInternal: boolean; // internal notes vs customer-facing
+  isInternal: boolean;
   createdAt: Date;
 }
 
@@ -113,18 +99,18 @@ export interface PerformanceMetrics {
   totalTickets: number;
   openTickets: number;
   resolvedTickets: number;
-  averageResolutionTime: number; // in minutes
-  slaCompliance: number; // percentage
-  customerSatisfaction: number; // average rating
+  averageResolutionTime: number;
+  slaCompliance: number;
+  customerSatisfaction: number;
 }
 
 export interface DashboardKPIs {
   totalTerminals: number;
-  onlineStatus: number; // percentage
+  onlineStatus: number;
   issuesDetected: number;
   scheduledMaintenance: number;
   avgUptime: number;
-  avgResolutionTime: number; // in hours
+  avgResolutionTime: number;
   peakHours: string;
   slaCompliance: number;
 }
@@ -144,12 +130,23 @@ export interface ReportFilter {
   includeRecommendations: boolean;
 }
 
-// Context interfaces for state management
+// Enhanced AuthContextType to match the context implementation
 export interface AuthContextType {
   currentUser: User | null;
+  loading: boolean;
+  error: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
+  updateCurrentUser: (updates: Partial<User>) => void;
+  clearError: () => void;
+  // Helper methods
+  isAdmin: () => boolean;
+  isManager: () => boolean;
+  isSupport: () => boolean;
+  isMerchant: () => boolean;
+  getAccessibleTerminals: () => Terminal[];
+  getAccessibleTickets: () => SupportTicket[];
 }
 
 export interface AppState {
